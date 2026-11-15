@@ -3,7 +3,7 @@ All notable changes are listed here. Format follows [Keep a Changelog](https://k
 
 ## [Unreleased]
 ### Added
-- Contribution guide, Code of Conduct, security policy, governance, issue and pull request templates, CI checks, branch-name and open-PR limit checks.
+- Contribution guide, Code of Conduct, security policy, governance, issue and pull request templates. Branch naming, the 3-open-PR limit and sign-off are checked by maintainers; no paid or hosted automation is used.
 
 ## 2026-11-15
 ### Added

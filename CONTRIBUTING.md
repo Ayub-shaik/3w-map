@@ -17,14 +17,14 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
    - `feature/<short-description>` for new things, e.g. `feature/pmap-json-output`
    - `bug/<short-description>` for fixes, e.g. `bug/export-crashes-on-empty-map`
    - `docs/<short-description>` for documentation only
-   Use lowercase letters, digits and hyphens. Pull requests from a branch called `main`, or from any other name, are closed by the automatic check.
+   Use lowercase letters, digits and hyphens. A maintainer will ask you to rename and reopen a pull request from `main` or from any other name.
 4. **Make small, focused commits.** One logical change per pull request. Write the commit message in the imperative ("Add ...", "Fix ...") and explain *why*.
 5. **Sign off** every commit (`git commit -s`). This adds `Signed-off-by: Your Name <you@example.com>` and certifies the [Developer Certificate of Origin](https://developercertificate.org/): you wrote the change or have the right to submit it under the MIT license.
 6. **Run the checks locally** (see below) and fill in the pull request template.
 7. **Open the pull request against `main`.** A maintainer reviews it. Expect questions; reviews usually take a few days. Please do not force-push over review comments; add new commits and we squash on merge.
 
 ## Pull request limits
-To keep reviews manageable, one contributor may have **at most 3 open pull requests** at a time, and new contributors' automated checks wait for a maintainer to approve them. If you hit the limit, the bot comments and closes the extra one; finish or close an existing pull request and reopen. This is about review capacity, not a judgement on your work.
+To keep reviews manageable, please keep **at most 3 open pull requests** at a time. This is checked by a maintainer, not automatically: this project deliberately uses no paid services or hosted automation. If you go over, a maintainer asks you to finish or close one first. It is about review capacity, not a judgement on your work.
 
 ## Local checks
 `pmap` needs only Python 3 and git.
@@ -33,7 +33,7 @@ python3 -m py_compile bin/pmap bin/pmap-export bin/agent-usage bin/agent-final
 python3 -c "import json,glob; [json.load(open(f)) for f in glob.glob('data/**/*.json', recursive=True)]"
 bin/pmap examples check          # the example map must have no gaps
 ```
-The same checks run in CI on every pull request.
+Maintainers run the same checks locally before merging. Please paste the output in your pull request.
 
 ## Style
 - Python: standard library only, no new dependencies without discussion. Match the surrounding code (naming, comment density).
