@@ -68,7 +68,7 @@ for k in sorted({t["kind"] for t in series}):
     families[k] = f
 data = dict(repo=repo, generated=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), running_task=running, tasks=tasks,
     setup_cost=[dict(n=t["n"], fresh=t["fresh"], out=t["out"], wall_min=t["wall_min"]) for t in cold], families=families, min_family=MIN_FAMILY, unclassified=[t["n"] for t in rel if not t["kind"]],
-    caveat="Descriptive, not causal: tokens are compared within one repo and one task family, early half vs late half, and task size varies. A family with fewer than min_family tasks shows no trend.",
+    caveat="Descriptive, not causal: tokens are compared within one repo and one task family, early half vs late half, and task size varies. A family with fewer than 4 tasks shows no trend.",
     summary=dict(finished=len(rel), excluded_off_repo=sum(1 for t in tasks if t["scope"] != "repo"), nodes=len(nodes), decisions=len(dec), decisions_done=sum(1 for x in dec if x.get("status") == "done"),
         done_with_proof=sum(1 for x in dec if x.get("status") == "done" and x.get("verified")), helped=dict(collections.Counter(t["helped"] or "unrated" for t in rel)),
         map_token_share=round(sum(t["map_tokens"] for t in rel) / max(1, sum(t["fresh"] + t["out"] for t in rel)) * 100, 2)))
