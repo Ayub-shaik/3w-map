@@ -122,11 +122,27 @@ function experiment(d) {
   <p><b>Weak points, stated plainly:</b> six questions, one run per arm, no repeats, so a single question can swing the totals. I scored the answers myself and knew which arm was which. The fact lists for Q3 to Q5 follow the map's own recorded links, which favours the map. Two arm B runs returned an empty hand-back and were rerun; one arm A agent saw the experiment plan in the repo (I moved it out for later runs). Arm A found details the map lacks in Q3 (rollback tags, demo-account state). Read it as a promising signal, not proof.</p></div>`;
 }
 
+
+function experiment2(x) {
+  if (!x) return;
+  const g = x.summary, avg = (o) => Math.round((o.R1 + o.R2) / 2 || ((o.rater1 + o.rater2) / 2));
+  const m = (k) => { const p = g[k].pct; const v = Object.values(p); return Math.round(v.reduce((a, b) => a + b, 0) / v.length); };
+  const dg = Math.round(100 * (1 - g['bstudio-B'].context_growth / g['bstudio-A'].context_growth));
+  const el = document.createElement('div');
+  el.innerHTML = `<h2>Repeat with two graders, and a second repo</h2>
+  <p class="mut">30 fresh runs. Answers were scored by two independent grader agents with arm labels and tool names stripped; they agreed on ${Math.round(x.fact_level_agreement_between_raters * 100)}% of facts.</p>
+  <div class="kpis"><div class="kpi"><b>${m('bstudio-A')}% → ${m('bstudio-B')}%</b><span>main project, 12 runs per arm: without → with the map</span></div>
+  <div class="kpi"><b>−${dg}%</b><span>text read from tool results, same number of tool calls</span></div>
+  <div class="kpi"><b>${m('tomorrowtools-A')}% = ${m('tomorrowtools-B')}%</b><span>second repo (map built by a separate agent): no difference</span></div></div>
+  <div class="caveat"><p>The second-repo questions were answerable from commit history, so a map built from that same history added nothing and cost about one more tool call. The map helps where intent and relationships are recorded; it adds little where git already says it.</p></div>`;
+  $('exp').appendChild(el);
+}
+
 function cx(r) { return 2 * ({ low: 1, medium: 2, high: 3 }[r.effort] || 2) + Math.min(r.files, 8) / 2; }
 
 function render(d) {
   W = fitW();
-  experiment(d);
+  experiment(d); experiment2(d.experiment2);
   const rows = d.tasks, s = d.summary, h = s.helped || {};
   $('sub').textContent = `${s.finished} finished tasks (repo ${d.repo}); task ${d.running_task || '–'} running. Updated ${new Date(d.generated).toLocaleString()}.`;
   const k = (b, t) => `<div class="kpi"><b>${b}</b><span>${t}</span></div>`;
@@ -164,6 +180,7 @@ async function load() {
     const t = {}; ['A', 'B'].forEach((a) => { const o = x.totals[a]; t[a] = { score: o.score, max: o.max, growth: o.context_growth_tokens, tools: o.tool_calls, wall_s: o.wall_s }; });
     d.experiment = { questions: qs, kind, totals: t };
   } catch (e) { /* no experiment file */ }
+  try { d.experiment2 = await (await fetch('../data/experiments/2026-11-15-exp2.json', { cache: 'no-store' })).json(); } catch (e) { /* none */ }
   return d;
 }
 load().then((d) => { DATA = d; render(d); }).catch(() => { $('sub').textContent = 'No data yet. Serve the repo root (python3 -m http.server) and open /report/.'; });
