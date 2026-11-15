@@ -1,5 +1,8 @@
 # 3w-map
 
+> **Using pmap with an assistant?** Read [PMAP.md](PMAP.md) first: five rules, one page.
+
+
 A small **decision map** that an AI coding agent keeps next to the code, plus the **telemetry and experiments** that test whether it is worth using.
 
 The idea: for every decision in a project, record **why** it exists (the goal it serves), **who** demanded it (a rule, spec or owner review) and **when** it came about (the earlier decision that caused it). Links go *up only*; "what depends on this" is computed by reversing them. A decision can only be marked done with a commit and a written proof.

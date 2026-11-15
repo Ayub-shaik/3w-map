@@ -127,8 +127,21 @@ def cmd_open(m, a):
             if n["kind"] == "decision" and n.get("status") == st: o.append(f"{n['id']} [{st}] {n['title'][:85]}")
     return "\n".join(o) or "nothing open"
 
+RULE = ("Record a node only if it changes this repo's code or plan, or is pending for it. "
+        "triggered_by = its real cause (required); serves = a goal (inherit the trigger's goal unless it clearly belongs to another); required_by only if a driver exists. "
+        "Rejected ideas and unrelated work are not recorded.")
+
 def cmd_add(m, a):
-    n = json.loads(a[0]); n.setdefault("kind", "decision"); n.setdefault("date", time.strftime("%Y-%m-%d"))
+    if not a:
+        return "usage: pmap <repo> add '<json>'  e.g. '{\"title\":\"...\",\"why\":\"...\",\"serves\":[\"G-X\"],\"triggered_by\":[\"ID\"],\"status\":\"open\"}'\n" + RULE
+    try: n = json.loads(a[0])
+    except ValueError as e: return f"REFUSED: argument is not valid JSON ({e})"
+    n.setdefault("kind", "decision"); n.setdefault("date", time.strftime("%Y-%m-%d"))
+    if n["kind"] == "decision" and n.get("id") not in m.nodes:
+        miss = [f for f in ("title", "why", "serves", "triggered_by") if not n.get(f)]
+        if miss: return "REFUSED: missing " + ", ".join(miss) + ".\n" + RULE
+        bad = [x for f in ("serves", "triggered_by", "required_by") for x in n.get(f, []) if x not in m.nodes]
+        if bad: return "REFUSED: unknown node id(s) " + ", ".join(bad) + " (use `find` to look them up)"
     if "id" not in n:
         pfx = os.environ.get("PMAP_PFX", m.name[:2].upper()); k = max([int(x.split("-")[1]) for x in m.nodes if x.startswith(pfx + "-") and x.split("-")[1].isdigit()] + [0]) + 1
         n["id"] = f"{pfx}-{k:03d}"
@@ -145,17 +158,21 @@ def cmd_done(m, a):
     n["status"] = "done"; n["verified"] = ver + " (" + time.strftime("%Y-%m-%d") + ")"; m.save(); return "done " + i
 
 def cmd_check(m, a):
-    o = []
+    o = []; legacy = {}
     for n in m.nodes.values():
         for f in ("serves", "required_by", "triggered_by", "supersedes"):
             for x in n.get(f, []):
                 if x not in m.nodes: o.append(f"{n['id']}: {f} -> {x} missing")
         if n["kind"] == "decision":
-            if not n.get("required_by"): o.append(f"{n['id']}: driver unknown")
+            strict = n.get("date", "") >= os.environ.get("PMAP_STRICT_FROM", "2026-11-15")
+            for bad, msg in ((not n.get("triggered_by"), "trigger not recorded (the when)"), (not n.get("serves"), "serves no goal")):
+                if bad and strict: o.append(f"{n['id']}: {msg}")
+                elif bad: legacy[msg] = legacy.get(msg, 0) + 1
             if n.get("status") == "done" and not n.get("verified"): o.append(f"{n['id']}: done without verification")
             if n.get("why", "").lower().startswith(("owner wanted", "because the owner")): o.append(f"{n['id']}: why is a wish, not a reason")
         for c in n.get("links", {}).get("commits", []):
             if subprocess.call(["git", "-C", m.repo, "cat-file", "-e", c + "^{commit}"], stderr=subprocess.DEVNULL): o.append(f"{n['id']}: commit {c} not found")
+    if legacy: o.append("older nodes (before the rules, not listed): " + ", ".join(f"{v} {k}" for k, v in legacy.items()))
     return "\n".join(o) or "map ok"
 
 def cmd_task(m, a):
