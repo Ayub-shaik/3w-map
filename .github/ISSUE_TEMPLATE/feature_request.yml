@@ -1,0 +1,17 @@
+name: Feature or improvement
+description: Suggest a change to the tool, the method or the experiments
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes: { label: The problem, description: What is hard or missing today }
+    validations: { required: true }
+  - type: textarea
+    id: idea
+    attributes: { label: Your idea, description: What should change, and how would we know it helped }
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Pull request
+      options:
+        - label: I would like to build this (branch `feature/...` from `main`)

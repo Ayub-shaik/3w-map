@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this method or data, please cite it."
+title: "3w-map: a decision map for AI-assisted projects, with telemetry and experiments"
+type: software
+authors:
+  - alias: "Ayub Shaik"
+repository-code: "https://github.com/Ayub-shaik/3w-map"
+license: MIT

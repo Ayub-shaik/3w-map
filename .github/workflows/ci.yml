@@ -1,0 +1,26 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tools compile
+        run: python3 -m py_compile bin/pmap bin/pmap-export bin/agent-usage bin/agent-final
+      - name: Data files are valid JSON
+        run: python3 -c "import json,glob; [json.load(open(f)) for f in glob.glob('data/**/*.json', recursive=True)]"
+      - name: Example map has no gaps
+        run: |
+          d=$(mktemp -d); mkdir -p "$d/.claude/map"; cp examples/nodes.example.jsonl "$d/.claude/map/nodes.jsonl"
+          git -C "$d" init -q; PATH="$PWD/bin:$PATH" pmap "$d" check
+      - name: No secrets or private paths in data and docs
+        run: |
+          if grep -rEn "(AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9]{30,}|/home/[a-z]+/)" README.md docs data examples skill bin; then echo "possible secret or private path"; exit 1; fi

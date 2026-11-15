@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security or conduct report (private)
+    url: https://github.com/Ayub-shaik/3w-map/security/advisories/new
+    about: Do not open a public issue for these.

@@ -69,5 +69,8 @@ New data is welcome and the aim is to grow it:
 3. Do not include raw agent answers, secrets or private project details.
 Planned next: more questions on other repos with questions whose answers are not in commit messages, a human grader, repeats of the second-repo runs, and a task-level comparison of rounds and rework with versus without a map lookup first.
 
+## Contributing
+Improvements, bug reports, new data and counter-evidence are welcome through **pull requests from a fork**. Create a `feature/<name>` or `bug/<name>` branch from `main`, sign off your commits (`git commit -s`), and keep to 3 open pull requests at a time. Read [CONTRIBUTING.md](CONTRIBUTING.md) first; everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues and conduct reports go through [SECURITY.md](SECURITY.md) (private). Questions: [SUPPORT.md](SUPPORT.md). How decisions are made: [GOVERNANCE.md](GOVERNANCE.md).
+
 ## License
 MIT, see `LICENSE`.

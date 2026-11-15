@@ -1,0 +1,19 @@
+name: Data contribution or counter-evidence
+description: Share results from your own repo, or evidence against a claim
+labels: [data]
+body:
+  - type: textarea
+    id: setup
+    attributes: { label: Setup, description: "Project size and type, agent and model, dates, which protocol steps you followed" }
+    validations: { required: true }
+  - type: textarea
+    id: results
+    attributes: { label: Results, description: "Aggregate scores, tool calls and tokens for both arms. Include failures and discarded runs." }
+    validations: { required: true }
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: No private repository content, secrets or personal data
+          required: true
