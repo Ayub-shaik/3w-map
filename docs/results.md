@@ -34,7 +34,7 @@ Reading: the B Studio result repeats experiment 1 on fresh runs, with the same p
 Limits: B Studio fact lists for Q3-Q5 follow the map's own links; graders see only the answer text and cannot verify sources; blinding is partial; the B Studio questions are the same ones as experiment 1; three questions on one second repo; one model.
 
 ## Experiment 3: 2026-11-15, decisions recorded only in notes
-Raw rows: `data/experiments/2026-11-15-exp3.json`. Six questions about owner decisions that exist only in saved project notes (an index plus one file per decision), not in commit messages; the map held almost none of them. Both arms could read the notes folder and the session ledger; arm B also had the map. One run per arm, two grader agents (100% agreement); **human grading is pending**.
+Raw rows: `data/experiments/2026-11-15-exp3.json`. Six questions about owner decisions that exist only in saved project notes (an index plus one file per decision), not in commit messages; the map held almost none of them. Both arms could read the notes folder and the session ledger; arm B also had the map. One run per arm, two grader agents (100% agreement), plus a blind human grader (the owner, on a phone): all 57 facts the human graded were marked Found (one fact left blank), which agrees with the agent graders.
 
 | | facts found | tool calls | context read (tokens) |
 |---|---|---|---|
