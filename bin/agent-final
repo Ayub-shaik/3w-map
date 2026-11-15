@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Print the last assistant text blocks of a sub-agent transcript (not the whole file): agent-final.py <agentId> [n]"""
+import json, glob, sys
+f = glob.glob(f"/tmp/claude-1000/**/{sys.argv[1]}.output", recursive=True)[0]
+t = []
+for l in open(f):
+    try: d = json.loads(l)
+    except Exception: continue
+    m = d.get("message") or {}
+    if m.get("role") == "assistant":
+        for c in m.get("content") or []:
+            if isinstance(c, dict) and c.get("type") == "text" and c["text"].strip(): t.append(c["text"])
+for x in t[-int(sys.argv[2] if len(sys.argv) > 2 else 1):]: print(x[:2500]); print("---")

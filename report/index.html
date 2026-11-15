@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3w-map trial telemetry</title>
+<style>
+:root{--bg:#fbf8f2;--card:#fff;--fg:#1c1917;--mut:#6b625a;--grid:#e6dfd3;--a:#8e2f3a;--b:#b8892e;--ok:#2d7a3e;--no:#9a8f7c;--ne:#c98a1b}
+@media(prefers-color-scheme:dark){:root{--bg:#14110f;--card:#1d1916;--fg:#efe8dc;--mut:#a39a8d;--grid:#2c2622;--a:#e0707c;--b:#d6b46b;--ok:#5fb877;--no:#8a8174;--ne:#e0a93f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,sans-serif;padding:18px 16px 56px;max-width:960px;margin-inline:auto}
+a{color:var(--a)}h1{font-size:23px;margin:0 0 4px}h2{font-size:17px;margin:30px 0 6px}p{margin:0 0 10px}.mut{color:var(--mut)}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+.kpi{background:var(--card);border:1px solid var(--grid);border-radius:12px;padding:12px}
+.kpi b{display:block;font-size:26px;line-height:1.1}.kpi span{color:var(--mut);font-size:12.5px}
+figure{margin:0 0 20px}figcaption{display:flex;flex-direction:column;margin-bottom:4px}figcaption span{color:var(--mut);font-size:13px}
+svg{width:100%;height:auto;display:block}.g{stroke:var(--grid)}.t{fill:var(--mut);font-size:11px}
+.how{background:var(--card);border:1px solid var(--grid);border-radius:12px;padding:12px 14px}
+.how ul{margin:6px 0 0;padding-left:18px}.how li{margin:3px 0}
+details{background:var(--card);border:1px solid var(--grid);border-radius:10px;margin:6px 0;padding:0}
+summary{cursor:pointer;padding:10px 12px;display:flex;gap:8px;align-items:center;list-style:none}
+summary::-webkit-details-marker{display:none}
+.n{font-weight:800;min-width:28px}.lab{flex:1}.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;white-space:nowrap}
+.yes{background:var(--ok)}.neutral{background:var(--ne)}.no{background:var(--no)}.unrated{background:var(--grid);color:var(--mut)}
+.body{padding:0 12px 12px;border-top:1px solid var(--grid)}
+.body dl{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;margin:10px 0 0}.body dt{color:var(--mut);font-size:13px}.body dd{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:4px}.chip{font:12px ui-monospace,monospace;background:var(--grid);border-radius:6px;padding:1px 6px}
+.filter{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.filter button{font:inherit;font-size:13px;border:1px solid var(--grid);background:var(--card);color:var(--fg);border-radius:99px;padding:4px 12px}
+.filter button[aria-pressed=true]{background:var(--a);color:#fff;border-color:var(--a)}
+.caveat{border-left:4px solid var(--b);padding:2px 12px;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="top"><div><h1>3W decision map: trial telemetry</h1><p class="mut" id="sub">Loading…</p></div><a href="https://github.com/Ayub-shaik/3w-map">Repository</a></div>
+
+<div class="kpis" id="kpis"></div>
+
+<h2>How the map works</h2>
+<div class="how">
+<p>The 3W map is a small list of <b>goals</b>, <b>drivers</b> (a rule, spec or owner review that demands something) and <b>decisions</b>. Each decision links <em>up</em> only: <b>serves</b> a goal (why), <b>required by</b> a driver (who) and <b>triggered by</b> an earlier decision (when). Effects are never stored; they are computed by reversing the links.</p>
+<ul>
+<li><b>Per task:</b> log the task and its effort, look up related decisions (<code>find</code>, <code>why</code>, <code>open</code>), add a decision node for anything new.</li>
+<li><b>Close gate:</b> a decision can only be marked done with a commit and a written verification. That is the main behaviour the trial tests.</li>
+<li><b>Meter:</b> every map call is counted in tokens, and every task's real token use, time and rounds are read from the session transcript.</li>
+</ul>
+</div>
+
+<div id="exp"></div>
+
+<h2>Complexity, cost and depth, task by task</h2>
+<div id="charts"></div>
+
+<h2>Where the map was used, and whether it helped</h2>
+<p class="mut">Verdict is my own rating per task, written from what the map calls did, not from a counterfactual. <b>Yes</b>: it prevented rework, exposed a gap or answered a question without reading files. <b>Neutral</b>: it recorded something, no visible effect. <b>No</b>: not used or no effect.</p>
+<div id="strip"></div>
+<div class="filter" id="filter"></div>
+<div id="tasks"></div>
+
+<h2>What this data does and does not show</h2>
+<div class="caveat" id="caveat"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let W = 880; const H = 240, L = 50, R = 14, T = 20, B = 34;
+const fitW = () => Math.max(360, Math.min(880, Math.round((document.body.clientWidth - 32) * 1.15)));
+
+function chart(rows, title, sub, series, opt = {}) {
+  const n = rows.length; if (n < 2) return '';
+  const xs = (i) => L + i * (W - L - R) / (n - 1);
+  const all = series.flatMap((s) => s.v);
+  let y, ticks, fmt;
+  if (opt.log) {
+    const lo = Math.log10(1000), hi = Math.log10(Math.max(...all) * 1.2);
+    y = (v) => T + (H - T - B) * (1 - (Math.log10(Math.max(v, 1000)) - lo) / (hi - lo));
+    ticks = [1000, 3000, 10000, 30000, 100000, 300000].filter((t) => t <= Math.max(...all) * 1.2); fmt = (t) => t / 1000 + 'k';
+  } else {
+    const ym = opt.ymax || Math.max(...all, 1) * 1.1; y = (v) => T + (H - T - B) * (1 - v / ym);
+    const raw = ym / 5, mag = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 5, 10].map((m) => m * mag).find((x) => x >= raw); ticks = []; for (let t = 0; t <= ym; t += st) ticks.push(t); fmt = (t) => String(t);
+  }
+  let o = `<figure><figcaption><b>${title}</b><span>${sub}</span></figcaption><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">`;
+  ticks.forEach((t) => { o += `<line class="g" x1="${L}" x2="${W - R}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/><text class="t" x="${L - 8}" y="${(y(t) + 4).toFixed(1)}" text-anchor="end">${fmt(t)}</text>`; });
+  rows.forEach((r, i) => { if (r.n % 2 === 1) o += `<text class="t" x="${xs(i).toFixed(1)}" y="${H - 14}" text-anchor="middle">${r.n}</text>`; });
+  o += `<text class="t" x="${(L + W - R) / 2}" y="${H - 1}" text-anchor="middle">task number</text>`;
+  let lx = L;
+  series.forEach((s) => {
+    o += `<polyline fill="none" stroke="var(${s.c})" stroke-width="2" stroke-linejoin="round" points="${rows.map((r, i) => xs(i).toFixed(1) + ',' + y(s.v[i]).toFixed(1)).join(' ')}"/>`;
+    rows.forEach((r, i) => { o += `<circle cx="${xs(i).toFixed(1)}" cy="${y(s.v[i]).toFixed(1)}" r="3.2" fill="var(${s.c})"><title>task ${r.n}: ${s.n} ${+s.v[i].toFixed(1)}</title></circle>`; });
+    o += `<rect x="${lx}" y="2" width="10" height="3" fill="var(${s.c})"/><text class="t" x="${lx + 14}" y="8">${s.n}</text>`; lx += 24 + 7 * s.n.length;
+  });
+  (opt.marks || []).forEach(([i, txt]) => { o += `<text class="t" style="fill:var(--b);font-weight:700" x="${xs(i).toFixed(1)}" y="${T - 4}" text-anchor="middle">${txt}</text>`; });
+  return o + '</svg></figure>';
+}
+
+function strip(rows) {
+  const w = Math.max(rows.length * 28 + 20, 300);
+  let o = `<svg viewBox="0 0 ${w} 62" role="img" aria-label="verdict per task" style="max-width:${w}px">`;
+  rows.forEach((r, i) => {
+    const x = 18 + i * 28, col = r.helped === 'yes' ? '--ok' : r.helped === 'neutral' ? '--ne' : '--no';
+    o += `<circle cx="${x}" cy="20" r="9" fill="var(${col})"><title>task ${r.n}: ${r.helped || 'unrated'}</title></circle>`;
+    if (r.map_calls) o += `<text class="t" x="${x}" y="44" text-anchor="middle">${r.map_calls}</text>`;
+    if (i % 2 === 0) o += `<text class="t" x="${x}" y="58" text-anchor="middle">${r.n}</text>`;
+  });
+  return o + '</svg><p class="mut" style="font-size:12.5px">Green yes · amber neutral · grey no. Small number under a dot: map calls in that task.</p>';
+}
+
+
+function experiment(d) {
+  const e = d.experiment; if (!e) return;
+  const t = e.totals, pct = (x) => Math.round(100 * x.score / x.max) + '%';
+  const rows = Object.entries(e.questions).sort((a, b) => a[0].localeCompare(b[0])).map(([q, v]) => `<tr><td>${q}</td><td class="l">${esc(e.kind[q] || '')}</td><td>${v.A.score}/${v.A.max}</td><td>${v.B.score}/${v.B.max}</td><td>${(v.A.growth / 1000).toFixed(1)}k</td><td>${(v.B.growth / 1000).toFixed(1)}k</td><td>${v.A.tools}</td><td>${v.B.tools}</td></tr>`).join('');
+  const dg = Math.round(100 * (1 - t.B.growth / t.A.growth));
+  $('exp').innerHTML = `<h2>Controlled comparison: same questions with and without the map</h2>
+  <p class="mut">Six questions about the project, each answered twice by a fresh Sonnet agent with no shared context. Arm A: repo, git, docs and the session ledger. Arm B: the same plus the map (told to start with it). Scored against fact lists written before the runs.</p>
+  <div class="kpis"><div class="kpi"><b>${pct(t.A)} → ${pct(t.B)}</b><span>facts found without → with the map (${t.A.score}/${t.A.max} vs ${t.B.score}/${t.B.max})</span></div>
+  <div class="kpi"><b>−${dg}%</b><span>text read from tool results (${(t.A.growth / 1000).toFixed(0)}k → ${(t.B.growth / 1000).toFixed(0)}k tokens)</span></div>
+  <div class="kpi"><b>${t.A.tools} vs ${t.B.tools}</b><span>tool calls, without vs with (the map arm made more)</span></div>
+  <div class="kpi"><b>${t.A.wall_s}s vs ${t.B.wall_s}s</b><span>total time, no real difference</span></div></div>
+  <div class="sc"><table><tr><th>#</th><th class="l">question type</th><th>A score</th><th>B score</th><th>A read</th><th>B read</th><th>A calls</th><th>B calls</th></tr>${rows}</table></div>
+  <div class="caveat"><p><b>Where the map won:</b> questions about who asked for something and what depends on it (Q4: 4 of 4 against 1 of 4; Q2 and Q3 one fact each). Plain lookups and well-documented fixes (Q1, Q6) tied: the repo's commit messages and docs already answered them, and the map arm needed extra calls.</p>
+  <p><b>Weak points, stated plainly:</b> six questions, one run per arm, no repeats, so a single question can swing the totals. I scored the answers myself and knew which arm was which. The fact lists for Q3 to Q5 follow the map's own recorded links, which favours the map. Two arm B runs returned an empty hand-back and were rerun; one arm A agent saw the experiment plan in the repo (I moved it out for later runs). Arm A found details the map lacks in Q3 (rollback tags, demo-account state). Read it as a promising signal, not proof.</p></div>`;
+}
+
+function cx(r) { return 2 * ({ low: 1, medium: 2, high: 3 }[r.effort] || 2) + Math.min(r.files, 8) / 2; }
+
+function render(d) {
+  W = fitW();
+  experiment(d);
+  const rows = d.tasks, s = d.summary, h = s.helped || {};
+  $('sub').textContent = `${s.finished} finished tasks (repo ${d.repo}); task ${d.running_task || '–'} running. Updated ${new Date(d.generated).toLocaleString()}.`;
+  const k = (b, t) => `<div class="kpi"><b>${b}</b><span>${t}</span></div>`;
+  $('kpis').innerHTML = k(s.finished, 'tasks finished') + k(s.map_token_share + '%', 'of tokens spent on map calls') + k(s.done_with_proof + '/' + s.decisions, 'decisions closed with proof') + k((h.yes || 0) + '/' + s.finished, 'tasks where the map helped');
+  const sum = (f) => rows.reduce((a, r) => a + f(r), 0);
+  $('charts').innerHTML =
+    chart(rows, '1. Task complexity', 'score 0–10 = 2 × effort level (low 1, medium 2, high 3) + 0.5 per file changed in the task (max 4)', [{ n: 'complexity score', v: rows.map(cx), c: '--a' }, { n: 'effort × 2', v: rows.map((r) => 2 * ({ low: 1, medium: 2, high: 3 }[r.effort] || 2)), c: '--b' }], { ymax: 10 }) +
+    chart(rows, '2. Tokens produced (work done)', 'output tokens per task, in thousands; thinking is the reasoning share', [{ n: 'output k', v: rows.map((r) => r.out / 1000), c: '--a' }, { n: 'thinking k', v: rows.map((r) => r.think / 1000), c: '--b' }]) +
+    chart(rows, '3. Input tokens paid (log scale)', 'fresh input + cache-written; spikes after long idle gaps are cache rebuilds, not harder work', [{ n: 'fresh input', v: rows.map((r) => Math.max(r.fresh, 1000)), c: '--a' }], { log: true }) +
+    chart(rows, '4. Depth of investigation', 'model rounds per task (each reply may call tools) and map calls', [{ n: 'model rounds', v: rows.map((r) => r.rounds), c: '--a' }, { n: 'map calls', v: rows.map((r) => r.map_calls), c: '--b' }]) +
+    chart(rows, '5. Map cost per task', 'tokens spent on map commands in each task (a flat line near zero means cheap)', [{ n: 'map tokens', v: rows.map((r) => r.map_tokens), c: '--a' }]);
+  $('strip').innerHTML = strip(rows);
+  const f = $('filter'); let cur = 'all';
+  const draw = () => {
+    $('tasks').innerHTML = rows.filter((r) => cur === 'all' || (r.helped || 'unrated') === cur).slice().reverse().map((r) => `<details><summary><span class="n">${r.n}</span><span class="lab">${esc(r.label || 'task ' + r.n)} <span class="mut" style="font-size:12.5px">· ${esc(r.kind)} · ${r.effort}${r.effort_guessed ? '?' : ''}</span></span><span class="badge ${r.helped || 'unrated'}">${r.helped || 'unrated'}</span></summary>
+      <div class="body"><dl><dt>How it was mapped</dt><dd>${esc(r.mapped) || '–'}</dd><dt>How it helped</dt><dd>${esc(r.how) || '–'}</dd><dt>Map calls</dt><dd><div class="chips">${(r.map_cmds || []).map((c) => `<span class="chip">${esc(c)}</span>`).join('') || '<span class="mut">none</span>'}</div></dd>
+      <dt>Cost</dt><dd>${(r.out / 1000).toFixed(1)}k output, ${(r.fresh / 1000).toFixed(0)}k fresh input, ${r.rounds} rounds, ${r.wall_min} min (includes waiting for the owner); map ${r.map_tokens} tokens</dd><dt>Size</dt><dd>${r.commits} commits, ${r.files} files</dd></dl></div></details>`).join('');
+  };
+  f.innerHTML = ['all', 'yes', 'neutral', 'no'].map((v) => `<button type="button" aria-pressed="${v === 'all'}" data-v="${v}">${v === 'all' ? 'All tasks' : v}</button>`).join('');
+  f.onclick = (e) => { const b = e.target.closest('button'); if (!b) return; cur = b.dataset.v; f.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b)); draw(); };
+  draw();
+  const used = rows.filter((r) => r.map_calls > 0).length;
+  $('caveat').innerHTML = `<p>The map took <b>${s.map_token_share}%</b> of tokens, so its cost is small. It was used in <b>${used} of ${s.finished}</b> tasks; use dropped sharply after task 20, and tasks 21–28 were written into the map afterwards.</p>
+  <p>There is no control group: nothing here shows how many tokens the same tasks would have cost without the map. What the data supports is narrower: decisions closed through the gate all carry a commit and a proof text (${s.done_with_proof} of ${s.decisions_done} closed), and some tasks answered a question in one call instead of reading files. Verdicts are one rater's judgement.</p>
+  <p>Next test: keep the map use going for every task, then compare rounds and rework on tasks where it was consulted first against those where it was not.</p>`;
+}
+let DATA; let rw = W; addEventListener('resize', () => { const w = fitW(); if (DATA && Math.abs(w - rw) > 40) { rw = w; render(DATA); } });
+const EXP = '../data/experiments/2026-11-15-bstudio.json';
+async function load() {
+  const d = await (await fetch('../data/telemetry/bstudio.json', { cache: 'no-store' })).json();
+  try {
+    const x = await (await fetch(EXP, { cache: 'no-store' })).json();
+    const qs = {}, kind = {};
+    x.rows.forEach((r) => { (qs[r.q] = qs[r.q] || {})[r.arm] = { score: r.score, max: r.max, growth: r.context_growth_tokens, tools: r.tool_calls, wall_s: r.wall_s }; kind[r.q] = r.type; });
+    const t = {}; ['A', 'B'].forEach((a) => { const o = x.totals[a]; t[a] = { score: o.score, max: o.max, growth: o.context_growth_tokens, tools: o.tool_calls, wall_s: o.wall_s }; });
+    d.experiment = { questions: qs, kind, totals: t };
+  } catch (e) { /* no experiment file */ }
+  return d;
+}
+load().then((d) => { DATA = d; render(d); }).catch(() => { $('sub').textContent = 'No data yet. Serve the repo root (python3 -m http.server) and open /report/.'; });
+</script>
+</body>
+</html>

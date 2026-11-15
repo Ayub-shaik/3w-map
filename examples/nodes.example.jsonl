@@ -1,0 +1,4 @@
+{"id":"G-SAFE","kind":"goal","title":"Releases are deliberate and recoverable"}
+{"id":"R-REL","kind":"driver","title":"Owner rule: every prod release has a backup and a rollback","why":"the last bad release took a day to undo","serves":["G-SAFE"],"required_by":[]}
+{"id":"EX-001","kind":"decision","title":"Take a database dump before each deploy","status":"open","why":"R-REL needs a way back","serves":["G-SAFE"],"required_by":["R-REL"],"triggered_by":[],"supersedes":[],"area":["ops"],"links":{"commits":[],"files":[],"docs":[],"mnemosyne":[]},"verified":"","date":"2026-01-01"}
+{"id":"EX-002","kind":"decision","title":"Deploy script refuses to run without a fresh dump","status":"open","why":"EX-001 is only a habit unless the script enforces it","serves":["G-SAFE"],"required_by":["R-REL"],"triggered_by":["EX-001"],"supersedes":[],"area":["ops"],"links":{"commits":[],"files":["scripts/deploy.sh"],"docs":[],"mnemosyne":[]},"verified":"","date":"2026-01-02"}

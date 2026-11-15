@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""Export the 3W trial telemetry of one repo to a JSON file (report/data feed).
+Usage: pmap-export <repo-name-or-path> [--out FILE] [--notes FILE] [--experiment FILE]. pmap snap calls it. Safe to re-run.
+Defaults: out=./data/telemetry/<repo>.json, notes=<telemetry dir>/3w-notes-<repo>.json."""
+import collections, datetime, json, os, re, subprocess, sys, tempfile, time
+import argparse
+ap = argparse.ArgumentParser(); ap.add_argument("repo"); ap.add_argument("--out"); ap.add_argument("--notes"); ap.add_argument("--experiment")
+args = ap.parse_args()
+HOME = os.path.expanduser("~")
+HERE = os.path.dirname(os.path.abspath(__file__))
+PMAP = os.path.join(HERE, "pmap")
+def _find(a):
+    if os.path.isdir(a): return os.path.abspath(a)
+    for root in os.environ.get("PMAP_ROOTS", "~/projects:~/Desktop:~/src").split(":"):
+        root = os.path.expanduser(root)
+        for r, ds, _ in os.walk(root):
+            if os.path.basename(r) == a and os.path.isdir(os.path.join(r, ".git")): return r
+            if r.count(os.sep) - root.count(os.sep) >= 3: ds[:] = []
+    sys.exit(f"repo not found: {a}")
+REPO = _find(args.repo)
+repo = os.path.basename(REPO)
+TEL = f"{HOME}/.claude/workspace/telemetry/pmap-{repo}.jsonl"
+NOTES = args.notes or f"{HOME}/.claude/workspace/telemetry/3w-notes-{repo}.json"
+OUT = args.out or os.path.join(os.getcwd(), "data", "telemetry", f"{repo}.json")
+rep = subprocess.run([PMAP, REPO, "report", "--last", "500"], capture_output=True, text=True).stdout
+notes = json.load(open(NOTES)) if os.path.exists(NOTES) else {}
+tel = [json.loads(l) for l in open(TEL)] if os.path.exists(TEL) else []
+ts, cmds = {}, collections.defaultdict(list)
+for d in tel:
+    if d["cmd"] == "task": ts.setdefault(d["seq"], d["ts"])
+    elif d["cmd"] not in ("snap", "stat", "report", "bench"): cmds[d["seq"]].append(d["cmd"])
+iso = lambda t: datetime.datetime.fromtimestamp(t, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+tasks, running = [], None
+for l in rep.splitlines():
+    if not re.match(r"^\d+ \|", l): continue
+    p = [x.strip() for x in l.split("|")]
+    n = int(p[0]); m = re.match(r"(?:(\d+)m)?(\d+)s(\+?)", p[2]); o = re.match(r"(\d+) \((\d+)\)", p[6]); c3 = p[7].split("/")
+    if m.group(3): running = n; continue
+    a = ts.get(n); b = ts.get(n + 1, int(time.time())); files, lines, commits = set(), 0, 0
+    if a:
+        out = subprocess.run(["git", "-C", REPO, "log", "--all", f"--since={iso(a)}", f"--until={iso(b)}", "--numstat", "--format=tformat:@@C"], capture_output=True, text=True).stdout
+        for ln in out.splitlines():
+            if ln == "@@C": commits += 1
+            elif "\t" in ln:
+                x = ln.split("\t")
+                if x[0].isdigit(): lines += int(x[0]) + int(x[1]); files.add(x[2])
+    nt = notes.get(str(n), {})
+    tasks.append(dict(n=n, effort=p[1].rstrip("?"), effort_guessed=p[1].endswith("?"), wall_min=round(int(m.group(1) or 0) + int(m.group(2)) / 60, 1),
+        rounds=int(p[3]), fresh=int(p[4]), cache_read=int(p[5]), out=int(o.group(1)), think=int(o.group(2)), map_calls=int(c3[0]), map_tokens=int(c3[1]),
+        files=len(files), commits=commits, lines=lines, map_cmds=cmds.get(n, []), label=nt.get("label", ""), kind=nt.get("kind", ""), mapped=nt.get("mapped", ""), helped=nt.get("helped", ""), how=nt.get("how", "")))
+nodes = [json.loads(l) for l in open(f"{REPO}/.claude/map/nodes.jsonl")]
+dec = [x for x in nodes if x["kind"] == "decision"]
+data = dict(repo=repo, generated=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), running_task=running, tasks=tasks,
+    summary=dict(finished=len(tasks), nodes=len(nodes), decisions=len(dec), decisions_done=sum(1 for x in dec if x.get("status") == "done"),
+        done_with_proof=sum(1 for x in dec if x.get("status") == "done" and x.get("verified")), helped=dict(collections.Counter(t["helped"] or "unrated" for t in tasks)),
+        map_token_share=round(sum(t["map_tokens"] for t in tasks) / max(1, sum(t["fresh"] + t["out"] for t in tasks)) * 100, 2)))
+EXP = args.experiment or ""
+if EXP and os.path.exists(EXP):
+    rows = json.load(open(EXP)); qs = collections.OrderedDict()
+    for r in rows: qs.setdefault(r["q"], {})[r["arm"]] = {k: r[k] for k in ("score", "max", "wrong", "tools", "rounds", "growth", "out", "wall_s", "note")}
+    tot = {}
+    for arm in ("A", "B"):
+        rr = [r for r in rows if r["arm"] == arm]
+        tot[arm] = {k: sum(r[k] for r in rr) for k in ("score", "max", "tools", "rounds", "growth", "out", "wall_s")}
+    data["experiment"] = dict(date="2026-11-15", model="sonnet", questions=qs, totals=tot, kind={})
+os.makedirs(os.path.dirname(OUT), exist_ok=True)
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(OUT)); os.write(fd, json.dumps(data).encode()); os.close(fd); os.chmod(tmp, 0o644); os.replace(tmp, OUT)
+print(f"3w export: {len(tasks)} tasks, {len(nodes)} nodes -> {OUT}")
