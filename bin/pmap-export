@@ -47,13 +47,31 @@ for l in rep.splitlines():
     nt = notes.get(str(n), {})
     tasks.append(dict(n=n, effort=p[1].rstrip("?"), effort_guessed=p[1].endswith("?"), wall_min=round(int(m.group(1) or 0) + int(m.group(2)) / 60, 1),
         rounds=int(p[3]), fresh=int(p[4]), cache_read=int(p[5]), out=int(o.group(1)), think=int(o.group(2)), map_calls=int(c3[0]), map_tokens=int(c3[1]),
-        files=len(files), commits=commits, lines=lines, map_cmds=cmds.get(n, []), label=nt.get("label", ""), kind=nt.get("kind", ""), mapped=nt.get("mapped", ""), helped=nt.get("helped", ""), how=nt.get("how", "")))
+        files=len(files), commits=commits, lines=lines, scope=nt.get("scope", "repo"), used_map=int(c3[0]) > 0, map_cmds=cmds.get(n, []), label=nt.get("label", ""), kind=nt.get("kind", ""), mapped=nt.get("mapped", ""), helped=nt.get("helped", ""), how=nt.get("how", "")))
 nodes = [json.loads(l) for l in open(f"{REPO}/.claude/map/nodes.jsonl")]
 dec = [x for x in nodes if x["kind"] == "decision"]
+# Proof is per repo and per task family. Tasks that are not about this repo (scope "off") and the first mapping (kind "setup", a one-time cost)
+# stay out of every trend; they are still listed so nothing is hidden.
+rel = [t for t in tasks if t["scope"] == "repo"]
+cold = [t for t in rel if t["kind"] == "setup"]
+series = [t for t in rel if t["kind"] not in ("setup", "")]  # unclassified tasks are listed but never trended
+def med(v): v = sorted(v); return v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2
+MIN_FAMILY = 4
+families = {}
+for k in sorted({t["kind"] for t in series}):
+    ts_ = [t for t in series if t["kind"] == k]
+    f = dict(n=len(ts_), used_map=sum(t["used_map"] for t in ts_), tasks=[t["n"] for t in ts_])
+    if len(ts_) < MIN_FAMILY: f["status"] = "not enough data"
+    else:
+        h = len(ts_) // 2; a, b = [t["fresh"] + t["out"] for t in ts_[:h]], [t["fresh"] + t["out"] for t in ts_[-h:]]
+        f.update(status="ok", early_median=med(a), late_median=med(b), change_pct=round((med(b) - med(a)) / max(1, med(a)) * 100, 1))
+    families[k] = f
 data = dict(repo=repo, generated=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), running_task=running, tasks=tasks,
-    summary=dict(finished=len(tasks), nodes=len(nodes), decisions=len(dec), decisions_done=sum(1 for x in dec if x.get("status") == "done"),
-        done_with_proof=sum(1 for x in dec if x.get("status") == "done" and x.get("verified")), helped=dict(collections.Counter(t["helped"] or "unrated" for t in tasks)),
-        map_token_share=round(sum(t["map_tokens"] for t in tasks) / max(1, sum(t["fresh"] + t["out"] for t in tasks)) * 100, 2)))
+    setup_cost=[dict(n=t["n"], fresh=t["fresh"], out=t["out"], wall_min=t["wall_min"]) for t in cold], families=families, min_family=MIN_FAMILY, unclassified=[t["n"] for t in rel if not t["kind"]],
+    caveat="Descriptive, not causal: tokens are compared within one repo and one task family, early half vs late half, and task size varies. A family with fewer than min_family tasks shows no trend.",
+    summary=dict(finished=len(rel), excluded_off_repo=sum(1 for t in tasks if t["scope"] != "repo"), nodes=len(nodes), decisions=len(dec), decisions_done=sum(1 for x in dec if x.get("status") == "done"),
+        done_with_proof=sum(1 for x in dec if x.get("status") == "done" and x.get("verified")), helped=dict(collections.Counter(t["helped"] or "unrated" for t in rel)),
+        map_token_share=round(sum(t["map_tokens"] for t in rel) / max(1, sum(t["fresh"] + t["out"] for t in rel)) * 100, 2)))
 EXP = args.experiment or ""
 if EXP and os.path.exists(EXP):
     rows = json.load(open(EXP)); qs = collections.OrderedDict()

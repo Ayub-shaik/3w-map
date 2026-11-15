@@ -57,6 +57,10 @@ summary::-webkit-details-marker{display:none}
 <div class="filter" id="filter"></div>
 <div id="tasks"></div>
 
+<h2>Does repeated use cut tokens? One repo, one task family</h2>
+<p class="mut" id="famnote"></p>
+<div id="fam"></div>
+
 <h2>What this data does and does not show</h2>
 <div class="caveat" id="caveat"></div>
 
@@ -143,10 +147,14 @@ function cx(r) { return 2 * ({ low: 1, medium: 2, high: 3 }[r.effort] || 2) + Ma
 function render(d) {
   W = fitW();
   experiment(d); experiment2(d.experiment2);
-  const rows = d.tasks, s = d.summary, h = s.helped || {};
+  const rows = d.tasks.filter((r) => r.scope !== 'off'), s = d.summary, h = s.helped || {};
   $('sub').textContent = `${s.finished} finished tasks (repo ${d.repo}); task ${d.running_task || '–'} running. Updated ${new Date(d.generated).toLocaleString()}.`;
   const k = (b, t) => `<div class="kpi"><b>${b}</b><span>${t}</span></div>`;
   $('kpis').innerHTML = k(s.finished, 'tasks finished') + k(s.map_token_share + '%', 'of tokens spent on map calls') + k(s.done_with_proof + '/' + s.decisions, 'decisions closed with proof') + k((h.yes || 0) + '/' + s.finished, 'tasks where the map helped');
+
+  const fe = Object.entries(d.families || {}), cs = (d.setup_cost || [])[0];
+  $('famnote').innerHTML = `Only tasks about <b>${esc(d.repo)}</b> are counted (${s.excluded_off_repo} off-repo tasks are left out). ${cs ? `First mapping was a one-time setup cost of ${(cs.fresh + cs.out).toLocaleString()} tokens and is not part of any trend. ` : ''}${(d.unclassified || []).length} tasks are not yet classified and are not trended. ${esc(d.caveat || '')}`;
+  $('fam').innerHTML = '<div class="sc"><table><tr><th class="l">Task family</th><th>Tasks</th><th>Used the map</th><th>Early median</th><th>Late median</th><th>Change</th></tr>' + fe.map(([k, f]) => `<tr><td>${esc(k)}</td><td>${f.n}</td><td>${f.used_map}</td>` + (f.status === 'ok' ? `<td>${Math.round(f.early_median).toLocaleString()}</td><td>${Math.round(f.late_median).toLocaleString()}</td><td>${f.change_pct > 0 ? '+' : ''}${f.change_pct}%</td>` : `<td colspan="3" class="mut">not enough data (needs ${d.min_family})</td>`) + '</tr>').join('') + '</table></div>';
   const sum = (f) => rows.reduce((a, r) => a + f(r), 0);
   $('charts').innerHTML =
     chart(rows, '1. Task complexity', 'score 0–10 = 2 × effort level (low 1, medium 2, high 3) + 0.5 per file changed in the task (max 4)', [{ n: 'complexity score', v: rows.map(cx), c: '--a' }, { n: 'effort × 2', v: rows.map((r) => 2 * ({ low: 1, medium: 2, high: 3 }[r.effort] || 2)), c: '--b' }], { ymax: 10 }) +
