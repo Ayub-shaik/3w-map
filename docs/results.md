@@ -33,6 +33,16 @@ Reading: the B Studio result repeats experiment 1 on fresh runs, with the same p
 
 Limits: B Studio fact lists for Q3-Q5 follow the map's own links; graders see only the answer text and cannot verify sources; blinding is partial; the B Studio questions are the same ones as experiment 1; three questions on one second repo; one model.
 
+## Experiment 3: 2026-11-15, decisions recorded only in notes
+Raw rows: `data/experiments/2026-11-15-exp3.json`. Six questions about owner decisions that exist only in saved project notes (an index plus one file per decision), not in commit messages; the map held almost none of them. Both arms could read the notes folder and the session ledger; arm B also had the map. One run per arm, two grader agents (100% agreement); **human grading is pending**.
+
+| | facts found | tool calls | context read (tokens) |
+|---|---|---|---|
+| without map | 100% | 5.0 | 7.9k |
+| with map | 100% | 7.5 | 7.6k |
+
+Reading: when a decision is written down in readable notes, a notes folder alone answers it perfectly, and an empty map only adds tool calls (+2.5 per question). The map is not a substitute for good notes; it adds value where relationships and intent are *not* already stored in a form an agent can read directly.
+
 ## Trial telemetry: 30 tasks of one project
 Map calls: about 1.2% of tokens. Self-rated effect (yes / neutral / no): 7 / 10 / 12 of 30 tasks (1 not yet rated). Use fell after task 20; later tasks were back-filled into the map. See `data/telemetry/bstudio.json` and the report page.
 
