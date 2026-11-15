@@ -56,6 +56,8 @@ View the report locally: `python3 -m http.server 8000` in the repo root, then op
 
 The map won on "who asked for this / what depends on it" and on a rule that exists only in the map. It tied on plain lookups that commit messages and docs already answered.
 
+**Experiment 2 (2026-11-15, 30 fresh runs, two independent graders, a second repo):** on B Studio the repeat gave 67-69% without the map and 93-97% with it (read volume -23%, same number of tool calls); the graders agreed on 98% of facts. On a **second repo**, whose map was built by a separate agent from git history only, the map made no difference (100% both ways, one extra tool call): those questions were already answerable from commits. The map helps where intent and relationships are recorded; it adds little where git already says it. Full table in [`docs/results.md`](docs/results.md).
+
 **Trial telemetry (30 tasks):** the map's own calls cost about 1.2% of tokens. By the agent's own rating it helped in 7 of 30 tasks, was neutral in 10, made no difference in 12, and 1 is not yet rated; use dropped sharply after task 20 and later tasks were written into the map afterwards.
 
 **What it does not show:** six questions and one run per arm, so one question can swing the totals; the scorer knew which arm was which; the fact lists for three questions follow the map's own links, which favours it; no repeat runs; one project. Details in [`docs/results.md`](docs/results.md).
@@ -65,7 +67,7 @@ New data is welcome and the aim is to grow it:
 1. Run the protocol in `docs/experiment-protocol.md` on a project of your own.
 2. Put the scored rows in `data/experiments/<date>-<project>.json` (same shape as the existing file) and the per-task export in `data/telemetry/`.
 3. Do not include raw agent answers, secrets or private project details.
-Planned next: three runs per question, a second blind scorer, questions from other repos, and a task-level comparison of rounds and rework with versus without a map lookup first.
+Planned next: more questions on other repos with questions whose answers are not in commit messages, a human grader, repeats of the second-repo runs, and a task-level comparison of rounds and rework with versus without a map lookup first.
 
 ## License
 MIT, see `LICENSE`.

@@ -1,0 +1,1 @@
+[{"id":"Q1","repo":"myrepo","text":"Why does feature X exist and which commits built it?","facts":["commit abc1234 added X","X exists because of rule R-001","a later commit def5678 fixed an edge case"]}]

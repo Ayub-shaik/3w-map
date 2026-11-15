@@ -17,6 +17,22 @@ Reading: the map helped most where the answer is a *recorded relationship* (who 
 
 Limits: 6 questions, 1 run per arm; scorer not blind; Q3-Q5 fact lists follow the map's links; 2 arm B runs re-run after an empty hand-back; 1 arm A agent saw the plan file (treated it as unverified; plan moved out afterwards).
 
+## Experiment 2: 2026-11-15, repeats, two graders, second repo
+Raw rows: `data/experiments/2026-11-15-exp2.json`. 30 new runs (Sonnet 5.5, fresh agent each), answers written to files, then scored by two independent grader agents in different shuffled orders with arm labels and tool names stripped. The graders agreed on 97.9% of individual facts.
+
+| group | runs | facts found (grader 1 / 2) | tool calls | context read (tokens) |
+|---|---|---|---|---|
+| B Studio, without map | 12 | 67% / 69% | 7.2 | 9.3k |
+| B Studio, with map | 12 | 93% / 97% | 7.0 | 7.2k (-23%) |
+| Second repo, without map | 3 | 100% / 100% | 6.0 | 5.9k |
+| Second repo, with map | 3 | 100% / 100% | 7.3 | 5.5k |
+
+Per question (mean of both graders): Q1 lineage of a fix 100% vs 100%; Q2 UI-rule history 65% vs 100%; Q3 release state 60% vs 90%; Q4 reverse dependency 12.5% vs 100%; Q5 open list 67% vs 83%; Q6 code lookup (control) 100% vs 100%; the three second-repo questions 100% vs 100%.
+
+Reading: the B Studio result repeats experiment 1 on fresh runs, with the same pattern: the map wins on recorded relationships (what exists because of a rule, who asked) and ties on plain lookups. **On the second repo it did not help at all**: those questions were answerable from git history, and the map there was built by a separate agent from the same history, so it held nothing extra (6 of the 13 relevant commits appear in it) and cost about one more tool call. That is the honest limit of the idea: a map adds value where it records intent or relationships that the commits and docs do not.
+
+Limits: B Studio fact lists for Q3-Q5 follow the map's own links; graders see only the answer text and cannot verify sources; blinding is partial; the B Studio questions are the same ones as experiment 1; three questions on one second repo; one model.
+
 ## Trial telemetry: 30 tasks of one project
 Map calls: about 1.2% of tokens. Self-rated effect (yes / neutral / no): 7 / 10 / 12 of 30 tasks (1 not yet rated). Use fell after task 20; later tasks were back-filled into the map. See `data/telemetry/bstudio.json` and the report page.
 
