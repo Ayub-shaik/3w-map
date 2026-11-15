@@ -1,0 +1,182 @@
+{
+ "id": "2026-11-15-exp3",
+ "model": "Sonnet 5.5 (fresh agent per run)",
+ "design": "6 questions about owner decisions recorded only in saved project notes (not in commit messages); both arms may read the notes folder and the session ledger; arm B also has the map, which holds almost none of these decisions; one run per arm; two independent grader agents; human grading pending",
+ "fact_level_agreement_between_raters": 1.0,
+ "summary": {
+  "bstudio-A": {
+   "n": 6,
+   "pct": {
+    "R1": 100.0,
+    "R2": 100.0
+   },
+   "tool_calls": 5.0,
+   "rounds": 6.0,
+   "context_growth": 7857,
+   "wall_s": 16.7
+  },
+  "bstudio-B": {
+   "n": 6,
+   "pct": {
+    "R1": 100.0,
+    "R2": 100.0
+   },
+   "tool_calls": 7.5,
+   "rounds": 8.3,
+   "context_growth": 7566,
+   "wall_s": 22.7
+  }
+ },
+ "rows": [
+  {
+   "q": "D1",
+   "type": "owner decision on auth provider and record deletion",
+   "arm": "A",
+   "max": 5,
+   "score_rater1": 5,
+   "score_rater2": 5,
+   "tool_calls": 5,
+   "rounds": 6,
+   "context_growth_tokens": 5317,
+   "wall_s": 17
+  },
+  {
+   "q": "D1",
+   "type": "owner decision on auth provider and record deletion",
+   "arm": "B",
+   "max": 5,
+   "score_rater1": 5,
+   "score_rater2": 5,
+   "tool_calls": 8,
+   "rounds": 9,
+   "context_growth_tokens": 7967,
+   "wall_s": 24
+  },
+  {
+   "q": "D2",
+   "type": "owner language policy for the interface",
+   "arm": "A",
+   "max": 5,
+   "score_rater1": 5,
+   "score_rater2": 5,
+   "tool_calls": 5,
+   "rounds": 6,
+   "context_growth_tokens": 5088,
+   "wall_s": 15
+  },
+  {
+   "q": "D2",
+   "type": "owner language policy for the interface",
+   "arm": "B",
+   "max": 5,
+   "score_rater1": 5,
+   "score_rater2": 5,
+   "tool_calls": 6,
+   "rounds": 7,
+   "context_growth_tokens": 5177,
+   "wall_s": 18
+  },
+  {
+   "q": "D3",
+   "type": "which branch production builds come from, and the incident behind it",
+   "arm": "A",
+   "max": 4,
+   "score_rater1": 4,
+   "score_rater2": 4,
+   "tool_calls": 5,
+   "rounds": 6,
+   "context_growth_tokens": 10789,
+   "wall_s": 17
+  },
+  {
+   "q": "D3",
+   "type": "which branch production builds come from, and the incident behind it",
+   "arm": "B",
+   "max": 4,
+   "score_rater1": 4,
+   "score_rater2": 4,
+   "tool_calls": 8,
+   "rounds": 9,
+   "context_growth_tokens": 11471,
+   "wall_s": 25
+  },
+  {
+   "q": "D4",
+   "type": "whether deploys and restarts need asking, and why",
+   "arm": "A",
+   "max": 4,
+   "score_rater1": 4,
+   "score_rater2": 4,
+   "tool_calls": 4,
+   "rounds": 5,
+   "context_growth_tokens": 4047,
+   "wall_s": 14
+  },
+  {
+   "q": "D4",
+   "type": "whether deploys and restarts need asking, and why",
+   "arm": "B",
+   "max": 4,
+   "score_rater1": 4,
+   "score_rater2": 4,
+   "tool_calls": 7,
+   "rounds": 8,
+   "context_growth_tokens": 7004,
+   "wall_s": 21
+  },
+  {
+   "q": "D5",
+   "type": "payment-provider setup and what must not be touched",
+   "arm": "A",
+   "max": 5,
+   "score_rater1": 5,
+   "score_rater2": 5,
+   "tool_calls": 6,
+   "rounds": 7,
+   "context_growth_tokens": 12341,
+   "wall_s": 20
+  },
+  {
+   "q": "D5",
+   "type": "payment-provider setup and what must not be touched",
+   "arm": "B",
+   "max": 5,
+   "score_rater1": 5,
+   "score_rater2": 5,
+   "tool_calls": 10,
+   "rounds": 10,
+   "context_growth_tokens": 8090,
+   "wall_s": 29
+  },
+  {
+   "q": "D6",
+   "type": "owner quality bar and delivery rule",
+   "arm": "A",
+   "max": 6,
+   "score_rater1": 6,
+   "score_rater2": 6,
+   "tool_calls": 5,
+   "rounds": 6,
+   "context_growth_tokens": 9558,
+   "wall_s": 17
+  },
+  {
+   "q": "D6",
+   "type": "owner quality bar and delivery rule",
+   "arm": "B",
+   "max": 6,
+   "score_rater1": 6,
+   "score_rater2": 6,
+   "tool_calls": 6,
+   "rounds": 7,
+   "context_growth_tokens": 5684,
+   "wall_s": 19
+  }
+ ],
+ "limits": [
+  "one run per arm",
+  "the notes folder is a very good baseline: an index plus one file per decision",
+  "the map had no entries for most of these decisions, so this tests cost when the map is empty on the topic",
+  "human grader results pending"
+ ]
+}
