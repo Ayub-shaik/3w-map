@@ -58,7 +58,7 @@ The map won on "who asked for this / what depends on it" and on a rule that exis
 
 **Experiment 2 (2026-11-15, 30 fresh runs, two independent graders, a second repo):** on B Studio the repeat gave 67-69% without the map and 93-97% with it (read volume -23%, same number of tool calls); the graders agreed on 98% of facts. On a **second repo**, whose map was built by a separate agent from git history only, the map made no difference (100% both ways, one extra tool call): those questions were already answerable from commits. The map helps where intent and relationships are recorded; it adds little where git already says it. Full table in [`docs/results.md`](docs/results.md).
 
-**Trial telemetry (30 tasks):** the map's own calls cost about 1.2% of tokens. By the agent's own rating it helped in 7 of 30 tasks, was neutral in 10, made no difference in 12, and 1 is not yet rated; use dropped sharply after task 20 and later tasks were written into the map afterwards.
+**Trial telemetry (35 finished tasks, refreshed 2026-11-15):** the map's own calls cost about 1.8% of tokens. By the agent's own rating it helped in 7 of 35 tasks, was neutral in 10, made no difference in 12, and 6 are not yet rated; use dropped sharply after task 20 and later tasks were written into the map afterwards.
 
 **What it does not show:** six questions and one run per arm, so one question can swing the totals; the scorer knew which arm was which; the fact lists for three questions follow the map's own links, which favours it; no repeat runs; one project. Details in [`docs/results.md`](docs/results.md).
 
