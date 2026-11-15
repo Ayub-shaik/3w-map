@@ -9,6 +9,17 @@ The idea: for every decision in a project, record **why** it exists (the goal it
 
 > **Status: a trial with early evidence, not a proven method.** One project, one agent, one owner. See [what the data shows and does not show](#what-the-data-shows-so-far).
 
+## Install
+
+```bash
+npm install -g 3w-map        # needs Node 18+ and Python 3 (standard library only)
+cd your-repo
+pmap init . --goal "what this project is for"   # creates the map, adds the five rules to AGENTS.md / CLAUDE.md
+pmap . open                                     # pending items
+```
+
+Or without installing: `npx 3w-map init .` (once published to npm). From a clone: `bin/pmap init .`.
+
 ## Who built this, and on what
 The data comes from **B Studio**, a private web, Android and iOS product for a drama academy. For about two months every line of that project has been written and committed by an AI agent (Claude), directed by a non-coding owner. The map, the tooling in this repo and the experiments were produced the same way. Treat the numbers as one case study, and check them against your own project before relying on them.
 

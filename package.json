@@ -1,0 +1,15 @@
+{
+  "name": "3w-map",
+  "version": "0.2.0",
+  "description": "3W decision map for AI coding agents: why / who / when for every decision, with a built-in token meter. Works with Claude, Codex and any assistant that can run a shell command.",
+  "bin": { "pmap": "bin/pmap.js", "3w": "bin/pmap.js" },
+  "files": ["bin/pmap", "bin/pmap.js", "bin/pmap-export", "PMAP.md", "README.md", "LICENSE", "skill/"],
+  "engines": { "node": ">=18" },
+  "os": ["linux", "darwin"],
+  "keywords": ["ai", "agents", "claude", "codex", "decision-log", "token-usage", "memory", "cli"],
+  "license": "MIT",
+  "author": "Ayub Shaik",
+  "repository": { "type": "git", "url": "git+https://github.com/Ayub-shaik/3w-map.git" },
+  "homepage": "https://github.com/Ayub-shaik/3w-map#readme",
+  "bugs": { "url": "https://github.com/Ayub-shaik/3w-map/issues" }
+}
